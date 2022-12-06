@@ -195,8 +195,7 @@ const int GL_EXP = 2048;
 void main() {
 
   vec2 tuv = texcoord.st;
-  //vec4 txCd = diffuseSampleNoLimit( texture, tuv, texelSize );
-  vec4 txCd = diffuseNoLimit( texture, tuv, vec2(0.001) );
+  vec4 txCd = texture2D( texture, tuv );
   float glowInf = 0.0;
   
   vec2 luv = lmcoord.st;

@@ -157,6 +157,8 @@ void main() {
   vec3 toNorm = upVecNorm * ((1.0-rainStrFit)*2.0-1.0);
   toNorm=normalize(toNorm)*.5+.5;
 
+  outCd.a *=  clamp( 1.0-min(1.0,gl_FragCoord.w*10.0-.3), 0.35, 1.0 ) ;
+
 	gl_FragData[0] = outCd;
   gl_FragData[1] = vec4(vec3( min(.9999,gl_FragCoord.w) ), 1.0);
   gl_FragData[2] = vec4(mix(vNormal,upVecNorm,.5)*.5+.5, 1.0);

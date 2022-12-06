@@ -569,11 +569,12 @@ void main() {
     
     vec4 txCd;
     // TODO : There's gotta be a better way to do this...
-    if( DetailBluring > 0 ){
+    /*if( DetailBluring > 0 ){
         txCd = diffuseSample( texture, tuv, vtexcoordam, vTexelSize, DetailBluring*2.0 );
     }else{
       txCd = texture2D(texture, tuv);
-    }
+    }*/
+      txCd = texture2D(texture, tuv);
 
     txCd.rgb = mix(txCd.rgb, vColor.rgb, vAlphaRemove);
     txCd.a = mix(txCd.a, 1.0, vAlphaRemove);
@@ -691,9 +692,12 @@ void main() {
 #endif
 
 #ifdef NETHER
+    // Nether Block Lighting; Ambient Lighting
     //blockLumVal =  vec4( mix((fogColor*.4+.4), lightCd, depth), 1.0);
     //blockLumVal =  vec4( lightCd, 1.0);
     blockLumVal =  vec4( (fogColor*.4+.4), 1.0);
+    float netherScalar = .6;
+    lightCd = 1.0-((1.0-lightCd)*netherScalar);
 #endif
 
     float lightLuma = luma(blockLumVal.rgb);
@@ -729,7 +733,7 @@ void main() {
     float sunPhaseMult = 1.0-max(0.0,dot( sunVecNorm, upVecNorm)*.65+.35);
     sunPhaseMult = 1.0-(sunPhaseMult*sunPhaseMult*sunPhaseMult);
     
-    skyBrightnessMult=eyeBrightnessSmooth.y*0.004166666666666666;//  1.0/240.0
+    skyBrightnessMult=min(1.0, eyeBrightnessSmooth.y*0.004166666666666666);//  1.0/240.0
     float moonPhaseMult = (1+mod(moonPhase+3,8))*.25;
     moonPhaseMult = min(1.0,moonPhaseMult) - max(0.0, moonPhaseMult-1.0);
     moonPhaseMult = (moonPhaseMult*.4+.1);
@@ -784,7 +788,7 @@ void main() {
     // -- -- -- -- -- -- -- -- --
     // -- Lighting influence - -- --
     // -- -- -- -- -- -- -- -- -- -- --
-    outCd.rgb *=  lightLuma + glowInf + vCdGlow;
+    outCd.rgb *=  lightLuma;// + glowInf + vCdGlow;
 
     // Used for correcting blended colors post environment influences
     // This shouldn't be needed, but blocks like Grass or Birch Log/Wood are persnickety
@@ -894,14 +898,18 @@ void main() {
     // -- -- -- -- -- -- -- -- -- -- -- -- -- --
     // Biome & Snow Glow when in a Cold Biome - -- --
     // -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-    float frozenSnowGlow = 1.0-smoothstep(.0,.2,BiomeTemp);
-    glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.3*(1.0-sunPhaseMult)*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
+    
+    skyBrightnessMult *= .5;
+    float ssU=1.0-(screenSpace.x*.35+.5);
+    
+    float frozenSnowGlow = 1.0;//-smoothstep(.0,.2,BiomeTemp);
+    glowCd = addToGlowPass(glowCd, outCd.rgb*frozenSnowGlow*.3*(1.0-sunPhaseMult*.4)*max(0.06,-dayNight)*max(0.0,(1.0-depth*3.0)));
     //float cdBrightness = min(1.0,max(0.0,dot(txCd.rgb,vec3(1.0))));
     //cdBrightness *= cdBrightness;
     //outCd.rgb *= 1.0+cdBrightness*frozenSnowGlow*3.5*max(0.06,-dayNight)*(1.0-rainStrength);
     outCd.rgb *= 1.0+frozenSnowGlow*max(0.06,-dayNight)*(1.0-rainStrength)*skyBrightnessMult;
     
-    float surfaceLitRainInf = 1.0-max(0.0, lightmapcd.r-.9)*2.0*depthBias;
+    float surfaceLitRainInf = 1.0-max(0.0, lightmapcd.r-.9)*(ssU*2.0)*depthBias;
     outCd.rgb *= 1.0-rainStrength*.35*skyBrightnessMult*(1.0-vIsLava)*surfaceLitRainInf;
     
     
@@ -911,7 +919,7 @@ void main() {
     // Brighten blocks when going spelunking
     // TODO: Promote control to Shader Options
     float skyBrightMultFit = min(1.0, 1.1-skyBrightnessMult*.1*(1.0-frozenSnowGlow) );
-    outCd.rgb *= skyBrightMultFit;
+    //outCd.rgb *= skyBrightMultFit;
     outCd.rgb*=mix(vec3(1.0), diffuseLight, skyBrightnessMult*sunPhaseMult);
 #endif
     
@@ -981,7 +989,7 @@ void main() {
     float blindinglyBrightCd = ( outCd.r * outCd.g * outCd.b );
     blindinglyBrightCd = max(0.0, 1.0- blindinglyBrightCd*5.0);
     outCd.rgb *=  mix( (blindinglyBrightCd *LightingBrightness + (1.0-LightingBrightness)), 1.0, LightingBrightness );
-    
+
     //outCd.rgb = vAvgColor.rgb;
     //outCd.rgb = vec3(vColorOnly);
     //outCd.rgb = vec3(vCrossBlockCull);

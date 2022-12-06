@@ -66,36 +66,6 @@ uniform int fogMode;
 varying vec3 normal;
 
 
-const int boxSamplesCount = 8;
-const vec2 boxSamples[8] = vec2[8](
-                              vec2( -1.0, -1.0 ),
-                              vec2( -1.0, 0.0 ),
-                              vec2( -1.0, 1.0 ),
-
-                              vec2( 0.0, -1.0 ),
-                              vec2( 0.0, 1.0 ),
-
-                              vec2( 1.0, -1.0 ),
-                              vec2( 1.0, 0.0 ),
-                              vec2( 1.0, 1.0 )
-                            );
-
-
-vec4 boxBlurSample( sampler2D tx, vec2 uv, vec2 texelRes){
-  vec4 sampleCd = texture2D(tx, uv);
-  
-  vec2 curUV;
-  vec4 curCd;
-  for( int x=0; x<boxSamplesCount; ++x){
-    curUV =  uv + boxSamples[x]*texelRes ;
-		
-    curCd = texture2D(tx, curUV);
-    sampleCd = mix( sampleCd, curCd, (sampleCd.a*curCd.a)*.5);
-  }
-  return sampleCd;
-}
-
-
 
 void main() {
 
